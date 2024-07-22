@@ -18,8 +18,9 @@ type pdf struct {
 
 func GetA4PDF(fontMap map[string]string, leftMargin, rightMargin, topMargin, bottomMargin float64) pdf {
 	gpdf := gopdf.GoPdf{}
-	width, height := 595.28, 841.89
-	gpdf.Start(gopdf.Config{PageSize: gopdf.Rect{W: width, H: height}}) //595.28, 841.89 = A4
+	// width, height := 595.28, 841.89
+	pageSize := *gopdf.PageSizeA4
+	gpdf.Start(gopdf.Config{PageSize: pageSize}) //595.28, 841.89 = A4
 	var err error
 	for key, value := range fontMap {
 		err = gpdf.AddTTFFont(key, value)
@@ -31,8 +32,8 @@ func GetA4PDF(fontMap map[string]string, leftMargin, rightMargin, topMargin, bot
 	gpdf.SetTopMargin(topMargin)
 	return pdf{
 		myPDF:        &gpdf,
-		width:        width,
-		height:       height,
+		width:        pageSize.W,
+		height:       pageSize.H,
 		leftMargin:   leftMargin,
 		rightMargin:  rightMargin,
 		topMargin:    topMargin,
@@ -47,7 +48,8 @@ func (p *pdf) WriteToFile(filepath string) error {
 
 func (p *pdf) Write(w io.Writer) error {
 	pdf := p.myPDF
-	return pdf.Write(w)
+	_, err := pdf.WriteTo(w)
+	return err
 }
 
 func (p *pdf) AddPage() {

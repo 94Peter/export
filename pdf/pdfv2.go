@@ -59,8 +59,8 @@ type PDF interface {
 
 func NewPDFv2(fontMap map[string]string, left, right, top, bottom float64) PDF {
 	gpdf := gopdf.GoPdf{}
-	width, height := 595.28, 841.89
-	gpdf.Start(gopdf.Config{PageSize: gopdf.Rect{W: width, H: height}}) //595.28, 841.89 = A4
+	pageSize := *gopdf.PageSizeA4
+	gpdf.Start(gopdf.Config{PageSize: pageSize}) //595.28, 841.89 = A4
 	var err error
 
 	for key, value := range fontMap {
@@ -73,8 +73,8 @@ func NewPDFv2(fontMap map[string]string, left, right, top, bottom float64) PDF {
 	gpdf.SetTopMargin(top)
 	return &pdfv2{
 		GoPdf:        &gpdf,
-		width:        width,
-		height:       height,
+		width:        pageSize.W,
+		height:       pageSize.H,
 		leftMargin:   left,
 		rightMargin:  right,
 		topMargin:    top,
@@ -158,7 +158,6 @@ func (pdf *pdfv2) TextWithPosition(text string, style style.TextStyle, x, y floa
 	color := style.Color
 	pdf.SetTextColor(color.R, color.G, color.B)
 	pdf.SetFillColor(color.R, color.G, color.B)
-
 	pdf.Cell(nil, text)
 	pdf.SetX(ox)
 	pdf.SetY(oy)
@@ -194,11 +193,11 @@ func (pdf *pdfv2) Br(h float64) {
 }
 
 func (p *pdfv2) AddDirectPage(pp ...AddPagePipe) {
+	p.page++
+	p.GoPdf.AddPageWithOption(gopdf.PageOption{PageSize: &gopdf.Rect{W: 595.28, H: 841.89}})
 	for _, t := range pp {
 		t.Before(p)
 	}
-	p.page++
-	p.GoPdf.AddPageWithOption(gopdf.PageOption{PageSize: &gopdf.Rect{W: 595.28, H: 841.89}})
 	p.height = 841.89
 	p.width = 595.28
 	for i, t := range pp {
@@ -210,12 +209,11 @@ func (p *pdfv2) AddDirectPage(pp ...AddPagePipe) {
 }
 
 func (p *pdfv2) AddHorizontalPage(pp ...AddPagePipe) {
+	p.page++
+	p.GoPdf.AddPageWithOption(gopdf.PageOption{PageSize: &gopdf.Rect{W: 841.89, H: 595.28}})
 	for _, t := range pp {
 		t.Before(p)
 	}
-	p.page++
-
-	p.GoPdf.AddPageWithOption(gopdf.PageOption{PageSize: &gopdf.Rect{W: 841.89, H: 595.28}})
 	p.width = 841.89
 	p.height = 595.28
 	for _, t := range pp {
